@@ -56,8 +56,33 @@ function startPHPServer($port, $docroot) {
     return $proc;
 }
 
+function isSubstr($s, $sub) {
+    return strpos($s, $sub) === 0;
+}
+
+function validateDirectories($projectDir, $destDir) {
+    if ($projectDir == "") {
+        echo "directory not found: {$argv[1]}\n";
+        exit(-1);
+    }
+    if ($projectDir == $destDir) {
+        echo "error: <project-dir> and <dest-dir> must not be the same\n";
+        exit(-1);
+    }
+    if (isSubstr($destDir, $projectDir)) {
+        echo "warning: <dest-dir> should not be in the <project-dir>\n";
+        echo "  because <dest-dir> will accumulate nested directories in each run\n";
+        echo "\n";
+        echo "if this is what you want, enter yes: ";
+        $s = fgets(STDIN);
+        if (trim($s) !== "yes")
+            exit(-1);
+    } 
+}
+
 $serverPort = "8000";
 
+// TODO: add exclude list
 function main() {
     global $argc;
     global $argv;
@@ -73,6 +98,7 @@ function main() {
 
     @mkdir($destDir);
     $destDir = realpath($destDir);
+    validateDirectories($projectDir, $destDir);
 
     $proc = startPHPServer($serverPort, $projectDir);
 
@@ -96,5 +122,4 @@ function main() {
 }
 
 main();
-
 ?>
