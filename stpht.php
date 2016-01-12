@@ -35,7 +35,14 @@ function removePrefix($s, $prefix) {
 }
 
 function usage($argv) {
-    echo "{$argv[0]} <project-dir> <dest-dir>\n";
+    $name = basename($argv[0]);
+    echo "stpht: converts php sites into static sites,\n";
+    echo "       no further configuration needed\n";
+    echo "\n";
+    echo "usage: $name <project-dir> <dest-dir>\n";
+    echo "  where\n";
+    echo "      project-dir is the project directory containing the website\n";
+    echo "      dest-dir is where the generated static files will be placed\n";
     die();
 }
 
