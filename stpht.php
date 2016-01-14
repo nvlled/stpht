@@ -1,6 +1,15 @@
 #!/usr/bin/php
 <?php 
 
+//
+// Set this to where the php binary is placed.
+// On windows, this will be something like "C:\php5\php.exe"
+const PHP_BIN_PATH = "/usr/bin/php";
+// To automatically search and update PHP_BIN_PATH,
+// run: php set-bin-path.php
+// or   php.exe set-bin-path.php
+//
+
 // $fn : function($relpath, $handle)
 function eachFiles($dirname, $fn) {
     $handle = opendir($dirname);
@@ -47,14 +56,19 @@ function usage($argv) {
 }
 
 function startPHPServer($port, $docroot) {
-    $arg = array();
-    // TODO: enable allow_url_open on php
-    // TODO: handle previously binded port
-    //$proc = proc_open("php -S localhost:8000 -t $docroot", $arg, $arg);
-    $proc = proc_open("php -S localhost:$port -t .", $arg, $arg, $docroot);
-    sleep(1);
-    return $proc;
+    $pid = pcntl_fork();
+    if ($pid == -1)
+        die("there is only a spoon");
+
+    if ($pid) {
+        sleep(1);
+        return $pid;
+    } else {
+        chdir($docroot);
+        pcntl_exec(PHP_BIN_PATH,  array("-S", "localhost:$port", "-t", "."));
+    }
 }
+
 
 function isSubstr($s, $sub) {
     return strpos($s, $sub) === 0;
@@ -100,7 +114,7 @@ function main() {
     $destDir = realpath($destDir);
     validateDirectories($projectDir, $destDir);
 
-    $proc = startPHPServer($serverPort, $projectDir);
+    $serverPID = startPHPServer($serverPort, $projectDir);
 
     eachFiles($projectDir, function($relpath, $abspath) use ($projectDir, $destDir, $host) {
         $s = removePrefix($abspath, $projectDir);
@@ -116,9 +130,7 @@ function main() {
         }
     });
 
-    // TODO: proc_terminate is not working...
-    //       proc_open has the wrong pid.....
-    system("pkill -9 php");
+    posix_kill($serverPID, SIGKILL);
 }
 
 main();
