@@ -1,5 +1,5 @@
 #!/usr/bin/php
-<?php 
+<?php
 
 //
 // Set this to where the php binary is placed.
@@ -7,15 +7,14 @@
 const PHP_BIN_PATH = "/usr/bin/php";
 // To automatically search and update PHP_BIN_PATH,
 // run: php set-bin-path.php
-// or   php.exe set-bin-path.php
-//
+// (php binary has to be in your PATH)
 
 // $fn : function($relpath, $handle)
 function eachFiles($dirname, $fn) {
     $handle = opendir($dirname);
     if (!$handle)
         return $handle;
-    
+
     while (($entry = readdir($handle)) !== false) {
         if ($entry == "." || $entry == "..")
             continue;
@@ -69,7 +68,6 @@ function startPHPServer($port, $docroot) {
     }
 }
 
-
 function isSubstr($s, $sub) {
     return strpos($s, $sub) === 0;
 }
@@ -83,7 +81,8 @@ function validateDirectories($projectDir, $destDir) {
         echo "error: <project-dir> and <dest-dir> must not be the same\n";
         exit(-1);
     }
-    if (isSubstr($destDir, $projectDir)) {
+
+    if (isSubstr(dirname($destDir), $projectDir)) {
         echo "warning: <dest-dir> should not be in the <project-dir>\n";
         echo "  because <dest-dir> will accumulate nested directories in each run\n";
         echo "\n";
@@ -91,7 +90,7 @@ function validateDirectories($projectDir, $destDir) {
         $s = fgets(STDIN);
         if (trim($s) !== "yes")
             exit(-1);
-    } 
+    }
 }
 
 $serverPort = "8000";
@@ -121,17 +120,23 @@ function main() {
         $destFile = "$destDir$s";
         echo "creating file: $destFile\n";
 
+        // TODO: Fix link generation
+        //       * Change absolute to relative
+        //       * Add index.html to URLs ending with slash or files with no extension
+        // href="/path/"         -> href="path/index.html"
+        // href="/path"          -> href="path/index.html"
+        // href="test.html"      -> href="test.html"
         if (!is_dir($relpath)) {
             @mkdir(dirname("$destFile"));
 
+            // rewrite href= and src=
             $contents = file_get_contents("$host$s", "r");
-            $dest = ereg_replace("\.php$", ".html", "$destFile");
+            $dest = preg_replace("/\.php$/i", ".html", "$destFile");
             file_put_contents($dest, $contents);
         }
     });
 
     posix_kill($serverPID, SIGKILL);
 }
-
 main();
 ?>
